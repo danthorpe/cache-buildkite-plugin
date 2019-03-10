@@ -9,4 +9,7 @@ configuration:
         type: string
     paths:
         type: [ string, array ]
+    env:
+      type: [ string, array ]
+      minimum: 2    
   additionalProperties: false
