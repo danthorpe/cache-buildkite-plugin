@@ -11,7 +11,7 @@ load "$BATS_PATH/load.bash"
   run "$PWD/hooks/pre-command"
   
   assert_success
-  assert_ouptut --partial "Restoring Cache: v1-cache-key"
+  assert_output --partial "Restoring Cache: v1-cache-key"
   
   unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY
 }
