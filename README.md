@@ -1,3 +1,5 @@
+[![Build Status](https://badge.buildkite.com/de63a1199fbe2ee8a8d7521bfc35f515934d638fa06b6aa9b1.svg)](https://buildkite.com/blindingskies/cache-buildkite-plugin)
+
 # Cache Buildkite Plugin
 
 A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) to restore and save 
