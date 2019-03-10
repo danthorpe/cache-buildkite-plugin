@@ -5,16 +5,11 @@ requirements:
   - aws
 configuration:
   properties:
-    save_paths:
-        type: [ string, array ]
-    save_key:
+    cache_key:
         type: string
-    restore:
+    paths:
         type: [ string, array ]
-  oneOf:
-    - required:
-      - save_paths
-      - save_key
-    - required:
-      - restore
+  required:
+    - cache_key
+    -paths
   additionalProperties: false

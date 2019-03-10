@@ -5,3 +5,19 @@ if [[ "${BUILDKITE_PLUGIN_CACHE_DEBUG:-false}" =~ (true|on|1) ]] ; then
   echo "--- :hammer: Enabling debug mode"
   set -x
 fi
+
+echo "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
+
+paths=()
+
+if [[ -n "${BUILDKITE_PLUGIN_CACHE_PATHS:-}" ]] ; then
+  paths+=("$BUILDKITE_PLUGIN_CACHE_PATHS")
+fi
+
+while IFS='=' read -r path _ ; do
+  if [[ $path =~ ^(BUILDKITE_PLUGIN_CACHE_PATHS_[0-9]+) ]] ; then
+    paths+=("${!path}")
+  fi
+done < <(env | sort)
+
+echo "paths: ${paths}"
