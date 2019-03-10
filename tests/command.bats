@@ -18,6 +18,7 @@ load "$BATS_PATH/load.bash"
 
 @test "Post-command syncs artifacts with a single path" {
 
+  export BUILDKITE_PLUGIN_CACHE_CACHE_KEY="v1-cache-key"
   export BUILDKITE_PLUGIN_CACHE_PATHS="Pods"
   run "$PWD/hooks/post-command"
 
@@ -25,4 +26,5 @@ load "$BATS_PATH/load.bash"
   assert_output --partial "Syncing Pods"
 
   unset BUILDKITE_PLUGIN_CACHE_PATHS
+  unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY  
 }
