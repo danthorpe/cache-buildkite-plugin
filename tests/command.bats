@@ -5,7 +5,7 @@ load "$BATS_PATH/load.bash"
 # Uncomment to enable stub debugging
 # export GIT_STUB_DEBUG=/dev/tty
 
-@test "Pre-command restores caches" {
+@test "Pre-command restores cache with basic key" {
   
   stub aws \
    "aws s3 sync s3://my-bucket/my-org/my-pipeline/v1-cache-key/ . : echo sync cache"
