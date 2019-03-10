@@ -9,7 +9,7 @@ to restore/save built dependencies between independent builds, not just jobs.
 ```yml
 steps:
   - plugins:
-    - danthorpe/cache-buildkite-plugin#v1.0.0:
+    - danthorpe/cache#v1.0.0:
       cache_key: [ "v1-cache-{{ checksum "Podfile.lock" }}" ]
       paths: [ "Pods/", "Rome/" ]      
 ```
