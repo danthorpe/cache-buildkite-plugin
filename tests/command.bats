@@ -7,4 +7,11 @@ load "$BATS_PATH/load.bash"
 
 @test "Pre-command restores caches" {
   
+  export BUILDKITE_PLUGIN_CACHE_CACHE_KEY="v1-cache-key"
+  run "$PWD/hooks/pre-command"
+  
+  assert_success
+  assert_ouptut --partial "Restoring Cache: v1-cache-key"
+  
+  unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY
 }
