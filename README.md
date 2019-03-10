@@ -1,4 +1,4 @@
-[![Build Status](https://badge.buildkite.com/de63a1199fbe2ee8a8d7521bfc35f515934d638fa06b6aa9b1.svg)](https://buildkite.com/blindingskies/cache-buildkite-plugin)
+[![Build Status](https://badge.buildkite.com/de63a1199fbe2ee8a8d7521bfc35f515934d638fa06b6aa9b1.svg?branch=master)](https://buildkite.com/blindingskies/cache-buildkite-plugin)
 
 # Cache Buildkite Plugin
 
