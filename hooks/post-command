@@ -23,13 +23,13 @@ if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
   
   if [ "${#paths[@]}" -eq 1 ]; then
 
-    echo "--- syncing ${paths[*]}"
+    echo "--- Syncing ${paths[*]}"
 
   elif [ "${#paths[@]}" -gt 1 ]; then
 
     for path in "${paths[@]}"
       do
-        echo "--- syncing ${paths}"
+        echo "--- Syncing ${path}"
       done
   fi
   
