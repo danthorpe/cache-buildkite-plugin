@@ -25,15 +25,16 @@ if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
   
   if [ "${#paths[@]}" -eq 1 ]; then
 
-    echo "--- :aws: Syncing ${paths[*]}"
+    echo "--- :aws: :amazon-s3: sync ${paths[*]}"
 
   elif [ "${#paths[@]}" -gt 1 ]; then
 
     for path in "${paths[@]}"
       do
-        echo "--- :aws: Syncing ${path}"
-#        aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
-        echo "aws s3 sync ${path} s3://${bucket}/${path}/ --profile=${BUILDKITE_PLUGIN_CACHE_S3_PROFILE} --delete"
+        echo "--- :aws: :amazon-s3: sync ${path}"
+#        echo "aws s3 sync ${path} s3://${bucket}/${path}/ --profile=${BUILDKITE_PLUGIN_CACHE_S3_PROFILE} --delete"        
+        aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
+
       done
   fi
   
