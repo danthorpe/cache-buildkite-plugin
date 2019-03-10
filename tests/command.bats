@@ -19,7 +19,7 @@ load "$BATS_PATH/load.bash"
 @test "Post-command syncs artifacts with a single path" {
 
   stub aws \
-   "aws s3 sync Pods s3://my-bucket/my-org/my-pipeline/v1-cache-key/Pods : echo Syncing Path"
+   "aws s3 sync Pods s3://my-bucket/my-org/my-pipeline/v1-cache-key/Pods : echo Syncing Pods"
 
   export BUILDKITE_ORGANIZATION_SLUG="my-org"
   export BUILDKITE_PIPELINE_SLUG="my-pipeline"
@@ -30,7 +30,7 @@ load "$BATS_PATH/load.bash"
   run "$PWD/hooks/post-command"
 
   assert_success
-  assert_output --partial "Syncing Path"
+  assert_output --partial "Syncing Pods"
 
   unset BUILDKITE_PLUGIN_CACHE_PATHS
   unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY  
