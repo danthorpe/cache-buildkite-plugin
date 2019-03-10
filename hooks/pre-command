@@ -6,8 +6,16 @@ if [[ "${BUILDKITE_PLUGIN_CACHE_DEBUG:-false}" =~ (true|on|1) ]] ; then
   set -x
 fi
 
-if [[ "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
+if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
+  echo "Restoring Cache: ${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
+  
+  
+  
+  
+  
+  
+  
+  
+else  
   echo "No Cache Key to restore"
 fi
-
-echo "Restoring Cache: ${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
