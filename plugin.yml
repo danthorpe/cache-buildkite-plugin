@@ -9,7 +9,4 @@ configuration:
         type: string
     paths:
         type: [ string, array ]
-  required:
-    - cache_key
-    -paths
   additionalProperties: false
