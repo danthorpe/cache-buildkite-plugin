@@ -11,8 +11,6 @@ load "$BATS_PATH/load.bash"
   
   assert_success
   assert_output --partial "No Cache Key to restore"
-  
-  unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY
 }
 
 @test "Pre-command restores caches" {
