@@ -9,7 +9,7 @@ if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
 
   cache_key="${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
 
-  echo ":aws: :amazon-s3: Syncing ${cache_key}"
+  echo ":aws: :amazon-s3: sync ${cache_key}"
   
   bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
   
