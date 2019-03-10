@@ -7,6 +7,10 @@ load "$BATS_PATH/load.bash"
 
 @test "Pre-command restores caches" {
   
+  stub aws \
+   "aws s3 sync s3://my-bucket/my-org/my-pipeline/v1-cache-key/ . : echo sync cache"
+  
+  
   export BUILDKITE_ORGANIZATION_SLUG="my-org"
   export BUILDKITE_PIPELINE_SLUG="my-pipeline"
   export BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME="my-bucket"
