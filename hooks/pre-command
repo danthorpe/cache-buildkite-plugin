@@ -7,7 +7,9 @@ fi
 
 if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
 
-  echo "Restoring Cache: ${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
+  cache_key="${BUILDKITE_PLUGIN_CACHE_CACHE_KEY}"
+
+  echo ":aws: :amazon-s3: Syncing ${cache_key}"
   
 
   
