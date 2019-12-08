@@ -20,7 +20,7 @@ steps:
 
 The cache key is a string, which support a crude template system. Currently `checksum` is
 the only command supported for now. It can be used as in the example above. In this case
-the cache key will be determined by executing a _checksum_ (actually `shasum`) on the
+the cache key will be determined by executing a _checksum_ (actually `sha1sum`) on the
 `Podfile.lock` file, prepended with `v1-cache-`.
 
 ## S3 Storage
