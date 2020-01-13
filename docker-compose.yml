@@ -3,4 +3,12 @@ services:
   tests:
     image: buildkite/plugin-tester
     volumes:
-      - ".:/plugin"
+    - ".:/plugin"
+  shellcheck:
+    image: koalaman/shellcheck:v0.7.0
+    volumes:
+    - ".:/mnt"
+    command:
+    - ./lib/shared.bash
+    - ./hooks/pre-command
+    - ./hooks/post-command

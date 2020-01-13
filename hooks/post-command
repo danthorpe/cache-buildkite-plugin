@@ -1,49 +1,34 @@
 #!/bin/bash
-# shellcheck disable=SC2001
 set -euo pipefail
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-if [[ "${BUILDKITE_PLUGIN_CACHE_DEBUG:-false}" =~ (true|on|1) ]] ; then
-  set -x
+# shellcheck source=lib/shared.bash
+. "$DIR/../lib/shared.bash"
+
+if [[ $BUILDKITE_COMMAND_EXIT_STATUS -ne 0 ]]; then
+  echo "Command failed, not uploading cache"
+  exit 0
 fi
 
-if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
+cache_key=$(get_cache_key)
+bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/$cache_key"
 
-  cache_key_prefix=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/{.*//')
-  template_value=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/^[^\{{]*[^A-Za-z]*//' -e 's/.}}.*$//' | tr -d \' | tr -d \")
-
-  if [[ $template_value == *"checksum"* ]]; then
-    checksum_argument=$(echo "$template_value" | sed -e 's/checksum*//')
-    function=${template_value/"checksum"/"shasum"}
-    result=$($function | tr -d "$checksum_argument")
-    cache_key="$cache_key_prefix$result"
-  else
-    cache_key=$BUILDKITE_PLUGIN_CACHE_CACHE_KEY
+paths=()
+while IFS='=' read -r path _ ; do
+  if [[ $path =~ ^(BUILDKITE_PLUGIN_CACHE_PATHS_[0-9]+) ]] ; then
+    paths+=("${!path}")
   fi
+done < <(env | sort | grep BUILDKITE_PLUGIN_CACHE_PATHS_)
 
-  bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
-  
-  paths=()
-  
-  if [[ -n "${BUILDKITE_PLUGIN_CACHE_PATHS:-}" ]] ; then
-    paths+=("$BUILDKITE_PLUGIN_CACHE_PATHS")
-  fi
-  
-  while IFS='=' read -r path _ ; do
-    if [[ $path =~ ^(BUILDKITE_PLUGIN_CACHE_PATHS_[0-9]+) ]] ; then
-      paths+=("${!path}")
-    fi
-  done < <(env | sort)
-  
-  if [ "${#paths[@]}" -eq 1 ]; then
-
-    echo "--- :aws: :amazon-s3: sync ${paths[*]}"
-    aws s3 sync "${paths[*]}" "s3://${bucket}/${paths[*]}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete    
-
-  elif [ "${#paths[@]}" -gt 1 ]; then
-    for path in "${paths[@]}"
-      do
-        echo "--- :aws: :amazon-s3: sync ${path}"
-        aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
-      done
-  fi  
+tmpdir=$(mktemp -d)
+if [[ "${BUILDKITE_PLUGIN_CACHE_RESTORED:-}" == *":$cache_key:"* ]]; then
+  echo "Not uploading new cache - it was restored"
+  exit 0
 fi
+
+echo "Compressing cache for $cache_key"
+tar -czf "$tmpdir/cache.tar.gz" "${paths[@]}"
+
+echo "Saving cache $cache_key"
+aws s3 cp "$tmpdir/cache.tar.gz" "s3://${bucket}/cache.tar.gz"
+rm -rf "$tmpdir"
