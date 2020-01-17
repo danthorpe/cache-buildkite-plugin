@@ -18,6 +18,7 @@ echo "Restoring cache $cache_key"
 bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/$cache_key"
 tmpdir=$(mktemp -d)
 # Set env var if we loaded the cache so we can skip reuploading it
-aws s3 cp "s3://${bucket}/cache.tar.gz" "$tmpdir/" && mark_restored "$cache_key" || echo "Cache not found"
-tar -xzf "$tmpdir/cache.tar.gz"
+aws s3 cp "s3://${bucket}/cache.tar.gz" "$tmpdir/" && \
+	tar -xzf "$tmpdir/cache.tar.gz" && \
+	mark_restored "$cache_key" || echo "Cache not found"
 rm -rf "$tmpdir"
