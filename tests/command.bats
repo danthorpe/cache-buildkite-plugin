@@ -5,49 +5,39 @@ load "$BATS_PATH/load.bash"
 # Uncomment to enable stub debugging
 # export GIT_STUB_DEBUG=/dev/tty
 
-@test "Pre-command restores cache with basic key" {
+@test "Pre-command copies down cache if it exists" {
   
   stub aws \
-   "aws s3 sync s3://my-bucket/my-org/my-pipeline/v1-cache-key/ . : echo sync cache"
+   "aws s3 cp s3://my-bucket/my-pipeline/my-label/my-directory.tar.gz . : echo cp s3"
   
   
   export BUILDKITE_ORGANIZATION_SLUG="my-org"
   export BUILDKITE_PIPELINE_SLUG="my-pipeline"
-  export BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME="my-bucket"
-  export BUILDKITE_PLUGIN_CACHE_S3_PROFILE="my-profile"
-  export BUILDKITE_PLUGIN_CACHE_CACHE_KEY="v1-cache-key"
+  export BUILDKITE_PLUGIN_CACHE_CACHED_FOLDERS_0="my_directory/"
   run "$PWD/hooks/pre-command"
   
   assert_success
-  assert_output --partial "sync v1-cache-key"
+  assert_output --partial "cp s3 "
   
-  unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY  
-  unset BUILDKITE_PLUGIN_CACHE_S3_PROFILE
-  unset BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME
+  unset BUILDKITE_PLUGIN_CACHE_CACHED_FOLDERS_0
   unset BUILDKITE_PIPELINE_SLUG
   unset BUILDKITE_ORGANIZATION_SLUG
 }
 
-@test "Post-command syncs artifacts with a single path" {
+@test "Post-command copies cach to S3" {
 
   stub aws \
-   "aws s3 sync Pods s3://my-bucket/my-org/my-pipeline/v1-cache-key/Pods : echo sync Pods"
+   "aws s3 cp my-directory.tar.gz s3://my-bucket/my-pipeline/my-label/my-directory.tar.gz : echo cp cache"
 
   export BUILDKITE_ORGANIZATION_SLUG="my-org"
   export BUILDKITE_PIPELINE_SLUG="my-pipeline"
-  export BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME="my-bucket"
-  export BUILDKITE_PLUGIN_CACHE_S3_PROFILE="my-profile"
-  export BUILDKITE_PLUGIN_CACHE_CACHE_KEY="v1-cache-key"
-  export BUILDKITE_PLUGIN_CACHE_PATHS="Pods"
+  export BUILDKITE_PLUGIN_CACHE_CACHED_FOLDERS_0="my_directory/"
   run "$PWD/hooks/post-command"
 
   assert_success
-  assert_output --partial "sync Pods"
+  assert_output --partial "cp cache"
 
-  unset BUILDKITE_PLUGIN_CACHE_PATHS
-  unset BUILDKITE_PLUGIN_CACHE_CACHE_KEY  
-  unset BUILDKITE_PLUGIN_CACHE_S3_PROFILE
-  unset BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME
+  unset BUILDKITE_PLUGIN_CACHE_CACHED_FOLDERS_0
   unset BUILDKITE_PIPELINE_SLUG
   unset BUILDKITE_ORGANIZATION_SLUG
 }

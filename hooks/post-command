@@ -1,62 +1,41 @@
 #!/bin/bash
-# shellcheck disable=SC2001
-set -euo pipefail
+set -ue
 
-if [[ "${BUILDKITE_PLUGIN_CACHE_DEBUG:-false}" =~ (true|on|1) ]] ; then
-  set -x
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck disable=SC1090
+. "$DIR/../lib/shared.bash"
+
+# get bucket name from org slug ie.. chef-oss or chef
+if [[ "${BUILDKITE_ORGANIZATION_SLUG}" == "chef-oss" ]]; then
+  bucket_name="core-buildkite-cache-chef-oss-prod"
+elif [[ "${BUILDKITE_ORGANIZATION_SLUG}" == "chef" ]]; then
+  bucket_name="core-buildkite-cache-chef-prod"
+else
+  bucket_name="core-buildkite-cache-chef-canary-canary"
 fi
 
-if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
+paths=( $(plugin_read_list CACHED_FOLDERS) )
 
-  cache_key_prefix=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/{.*//')
-  template_value=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/^[^\{{]*[^A-Za-z]*//' -e 's/.}}.*$//' | tr -d \' | tr -d \")
+for path in "${paths[@]}"
+do
+  if [[ -d ${path} ]]; then
+    filename=`echo ${path} |sed 's/\//_/g'`
 
-  if [[ $template_value == *"checksum"* ]]; then
-    checksum_argument=$(echo "$template_value" | sed -e 's/checksum*//')
-    function=${template_value/"checksum"/"shasum"}
-    result=$($function | tr -d "$checksum_argument")
-    cache_key="$cache_key_prefix$result"
-  else
-    cache_key=$BUILDKITE_PLUGIN_CACHE_CACHE_KEY
-  fi
-
-  paths=()
-
-  if [[ -n "${BUILDKITE_PLUGIN_CACHE_PATHS:-}" ]] ; then
-    paths+=("$BUILDKITE_PLUGIN_CACHE_PATHS")
-  fi
-
-  while IFS='=' read -r path _ ; do
-    if [[ $path =~ ^(BUILDKITE_PLUGIN_CACHE_PATHS_[0-9]+) ]] ; then
-      paths+=("${!path}")
+    if [[ ${filename: -1} == "_" ]]; then
+      filename=${filename::${#filename}-1}
     fi
-  done < <(env | sort)
 
-  if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
-      mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
+    echo "--- compressing ${path} into tar"
+    tar -czf ${filename}.tar.gz ${path}
+
+    BUILDKITE_LABEL=`echo ${BUILDKITE_LABEL} |sed 's/\///g'`
+
+    s3_bucket="s3://${bucket_name}/${BUILDKITE_PIPELINE_SLUG}/${BUILDKITE_LABEL}"
+
+    echo "--- :aws: :amazon-s3: cp ${filename}.tar.gz"
+    aws s3 cp "${filename}.tar.gz" "${s3_bucket}/${filename}.tar.gz"
   else
-      bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
+    echo "--- skipping, ${path} is not a directory"
   fi
-
-  if [ "${#paths[@]}" -eq 1 ]; then
-      if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
-	  mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${paths[*]}"
-	  rsync -a --delete "${paths[*]}/" "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${paths[*]}/"
-      else
-	  echo "--- :aws: :amazon-s3: sync ${paths[*]}"
-	  aws s3 sync "${paths[*]}" "s3://${bucket}/${paths[*]}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
-      fi
-
-  elif [ "${#paths[@]}" -gt 1 ]; then
-    for path in "${paths[@]}"
-    do
-	if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
-	    mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${path}"
-	    rsync -a --delete "${path}/" "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${path}/"
-	else
-            echo "--- :aws: :amazon-s3: sync ${path}"
-            aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
-	fi
-    done
-  fi
-fi
+done

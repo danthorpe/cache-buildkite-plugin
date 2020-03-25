@@ -1,17 +1,11 @@
 name: Cache
-description: Restore and Save directories using a cache key
-author: https://github.com/danthorpe
+description: Restore and Save directories with sha256sum and s3
+author: https://github.com/chef
 requirements:
   - aws
+  - tar
 configuration:
   properties:
-    rsync_storage:
-      type: string
-    cache_key:
-      type: string
-    paths:
-      type: [ string, array ]
-    env:
-      type: [ string, array ]
-      minimum: 2
+    cached_folders:
+      type: [ array ]
   additionalProperties: false

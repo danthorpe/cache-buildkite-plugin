@@ -1,34 +1,46 @@
 #!/bin/bash
-# shellcheck disable=SC2001
-set -euo pipefail
 
-if [[ "${BUILDKITE_PLUGIN_CACHE_DEBUG:-false}" =~ (true|on|1) ]] ; then
-  set -x
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck disable=SC1090
+. "$DIR/../lib/shared.bash"
+
+# get bucket name from org slug ie.. chef-oss or chef
+if [[ "${BUILDKITE_ORGANIZATION_SLUG}" == "chef-oss" ]]; then
+  bucket_name="core-buildkite-cache-chef-oss-prod"
+elif [[ "${BUILDKITE_ORGANIZATION_SLUG}" == "chef" ]]; then
+  bucket_name="core-buildkite-cache-chef-prod"
+else
+  bucket_name="core-buildkite-cache-chef-canary-canary"
 fi
 
-if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
+paths=( $(plugin_read_list CACHED_FOLDERS) )
 
-  cache_key_prefix=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/{.*//')
-  template_value=$(echo "$BUILDKITE_PLUGIN_CACHE_CACHE_KEY" | sed -e 's/^[^\{{]*[^A-Za-z]*//' -e 's/.}}.*$//' | tr -d \' | tr -d \")
+for path in "${paths[@]}"
+do
+  if [[ -d ${path} ]]; then
+    filename=`echo ${path} |sed 's/\//_/g'`
 
-  if [[ $template_value == *"checksum"* ]]; then
-    checksum_argument=$(echo "$template_value" | sed -e 's/checksum*//')
-    function=${template_value/"checksum"/"shasum"}
-    result=$($function | tr -d "$checksum_argument")
-    cache_key="$cache_key_prefix$result"
+    if [[ ${filename: -1} == "_" ]]; then
+      filename=${filename::${#filename}-1}
+    fi
+
+    BUILDKITE_LABEL=`echo ${BUILDKITE_LABEL} |sed 's/\///g'`
+
+    s3_bucket="s3://${bucket_name}/${BUILDKITE_PIPELINE_SLUG}/${BUILDKITE_LABEL}"
+
+    aws s3 ls ${s3_bucket}/${filename}.tar.gz
+    rc=$?
+    if [[ ${rc} -eq 0 ]]; then
+      echo "--- :aws: :amazon-s3: cp ${filename}"
+      aws s3 cp "${s3_bucket}/${filename}.tar.gz" "."
+      
+      echo "--- untar into ${path}"
+      tar -xzf ${filename}.tar.gz
+    else 
+      echo "-- skipping :aws: :amazon-s3: cp as ${filename}.tar.gz does not exist in ${s3_bucket}"
+    fi
   else
-    cache_key=$BUILDKITE_PLUGIN_CACHE_CACHE_KEY
+    echo "--- skipping, ${path} is not a directory"
   fi
-
-  if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
-      mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/"
-      rsync -a "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/" .
-  else
-      echo ":aws: :amazon-s3: sync ${cache_key}"
-
-      bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
-
-      aws s3 sync "s3://${bucket}/" . --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}"
-  fi
-
-fi
+done
