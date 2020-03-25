@@ -18,29 +18,27 @@ paths=( $(plugin_read_list CACHED_FOLDERS) )
 
 for path in "${paths[@]}"
 do
-  if [[ -d ${path} ]]; then
-    filename=`echo ${path} |sed 's/\//_/g'`
+  filename=`echo ${path} |sed 's/\//_/g'`
 
-    if [[ ${filename: -1} == "_" ]]; then
-      filename=${filename::${#filename}-1}
-    fi
+  # remove trailing '-' from filename
+  if [[ ${filename: -1} == "_" ]]; then
+    filename=${filename::${#filename}-1}
+  fi
 
-    BUILDKITE_LABEL=`echo ${BUILDKITE_LABEL} |sed 's/\///g'`
+  # remove '/' from label if it exists - only character that breaks S3 pathing
+  BUILDKITE_LABEL=`echo ${BUILDKITE_LABEL} |sed 's/\///g'`
 
-    s3_bucket="s3://${bucket_name}/${BUILDKITE_PIPELINE_SLUG}/${BUILDKITE_LABEL}"
+  s3_bucket="s3://${bucket_name}/${BUILDKITE_PIPELINE_SLUG}/${BUILDKITE_LABEL}"
 
-    aws s3 ls ${s3_bucket}/${filename}.tar.gz
-    rc=$?
-    if [[ ${rc} -eq 0 ]]; then
-      echo "--- :aws: :amazon-s3: cp ${filename}"
-      aws s3 cp "${s3_bucket}/${filename}.tar.gz" "."
-      
-      echo "--- untar into ${path}"
-      tar -xzf ${filename}.tar.gz
-    else 
-      echo "-- skipping :aws: :amazon-s3: cp as ${filename}.tar.gz does not exist in ${s3_bucket}"
-    fi
-  else
-    echo "--- skipping, ${path} is not a directory"
+  aws s3 ls ${s3_bucket}/${filename}.tar.gz
+  rc=$?
+  if [[ ${rc} -eq 0 ]]; then
+    echo "--- :aws: :amazon-s3: cp ${filename}"
+    aws s3 cp "${s3_bucket}/${filename}.tar.gz" "."
+    
+    echo "--- untar into ${path}"
+    tar -xzf ${filename}.tar.gz
+  else 
+    echo "-- skipping :aws: :amazon-s3: cp as ${filename}.tar.gz does not exist in ${s3_bucket}"
   fi
 done

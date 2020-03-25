@@ -19,9 +19,11 @@ paths=( $(plugin_read_list CACHED_FOLDERS) )
 
 for path in "${paths[@]}"
 do
+  # if the path is bad - skip it, don't break things
   if [[ -d ${path} ]]; then
     filename=`echo ${path} |sed 's/\//_/g'`
 
+    # remove trailing '-' from filename
     if [[ ${filename: -1} == "_" ]]; then
       filename=${filename::${#filename}-1}
     fi
@@ -29,11 +31,12 @@ do
     echo "--- compressing ${path} into tar"
     tar -czf ${filename}.tar.gz ${path}
 
+    # remove '/' from label if it exists - only character that breaks S3 pathing
     BUILDKITE_LABEL=`echo ${BUILDKITE_LABEL} |sed 's/\///g'`
 
     s3_bucket="s3://${bucket_name}/${BUILDKITE_PIPELINE_SLUG}/${BUILDKITE_LABEL}"
 
-    echo "--- :aws: :amazon-s3: cp ${filename}.tar.gz"
+    echo "--- cp ${filename}.tar.gz into :aws: :amazon-s3:"
     aws s3 cp "${filename}.tar.gz" "${s3_bucket}/${filename}.tar.gz"
   else
     echo "--- skipping, ${path} is not a directory"

@@ -2,11 +2,11 @@
 
 A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) to restore and save directories to and from an s3 bucket.
 
-- Built off of a sha256sum of the tar of the specified cached diectories into a pipeline specific s3 bucket
-  - give example
-- When pushing back to s3, will use the [--delete](https://docs.aws.amazon.com/cli/latest/reference/s3/sync.html) option when syncing which removes all contents from the destination that do not match the source.
+- Built off of BUILDKITE env variables so there is no necessary exporting needed
 
-Example: `aws s3 sync . s3://mybucket --delete`
+Example push: `aws s3 cp vendor.tar.gz s3://mybucket/my-pipeline/my-label/vendor.tar.gz`
+
+Example pull: `aws s3 cp s3://mybucket/my-pipeline/my-label/vendor.tar.gz .`
 
 ## Example
 
@@ -16,7 +16,7 @@ steps:
     plugins:
     - chef/cache#v1.0.0:
         cached_folders:
-          - .vendor/
+        - .vendor/
 ```
 
 ## Configuration
