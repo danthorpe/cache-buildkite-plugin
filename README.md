@@ -46,7 +46,7 @@ If this is set it will be used as the destination parameter of a ``rsync -az`` c
 steps:
   - plugins:
     - danthorpe/cache#v1.0.0:
-		rsync_storage: '/tmp/buildkite-cache'
+        rsync_storage: '/tmp/buildkite-cache'
         cache_key: "v1-cache-{{ checksum 'Podfile.lock' }}"
         paths: [ "Pods/", "Rome/" ]
 ```
