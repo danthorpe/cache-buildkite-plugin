@@ -32,30 +32,31 @@ if [[ -n "${BUILDKITE_PLUGIN_CACHE_CACHE_KEY:-}" ]] ; then
     fi
   done < <(env | sort)
 
-  if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
+  if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE:-}" ]] ; then
       mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
   else
       bucket="${BUILDKITE_PLUGIN_CACHE_S3_BUCKET_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}"
   fi
 
+  sync_options=${BUILDKITE_PLUGIN_CACHE_SYNC_OPTIONS:-}
   if [ "${#paths[@]}" -eq 1 ]; then
-      if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
+      if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE:-}" ]] ; then
 	  mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${paths[*]}"
 	  rsync -a --delete "${paths[*]}/" "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${paths[*]}/"
       else
 	  echo "--- :aws: :amazon-s3: sync ${paths[*]}"
-	  aws s3 sync "${paths[*]}" "s3://${bucket}/${paths[*]}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
+	  aws s3 sync "${paths[*]}" "s3://${bucket}/${paths[*]}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete $sync_options
       fi
 
   elif [ "${#paths[@]}" -gt 1 ]; then
     for path in "${paths[@]}"
     do
-	if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}" ]] ; then
+	if [[ -n "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE:-}" ]] ; then
 	    mkdir -p "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${path}"
 	    rsync -a --delete "${path}/" "${BUILDKITE_PLUGIN_CACHE_RSYNC_STORAGE}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${cache_key}/${path}/"
 	else
             echo "--- :aws: :amazon-s3: sync ${path}"
-            aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete
+            aws s3 sync "${path}" "s3://${bucket}/${path}/" --profile="${BUILDKITE_PLUGIN_CACHE_S3_PROFILE}" --delete $sync_options
 	fi
     done
   fi

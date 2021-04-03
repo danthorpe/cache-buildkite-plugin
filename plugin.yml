@@ -9,6 +9,8 @@ configuration:
       type: string
     cache_key:
       type: string
+    sync_options:
+      type: string
     paths:
       type: [ string, array ]
     env:
